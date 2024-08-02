@@ -23,6 +23,11 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS agendamento
                ''')
 conn.commit()
 
+# procedimentos
+cursor.execute('''CREATE TABLE IF NOT EXISTS procedimentos
+             (id INTEGER PRIMARY KEY, procedimentos VARCHAR(100))
+               ''')
+conn.commit()
 
 rows = cursor.fetchall()
 

@@ -99,5 +99,25 @@ def protected():
     except jwt.InvalidTokenError:
         return jsonify({'message': 'Token inválido!'}), 401
 
+    
+    
+# Rota de comunicação do procedimento com o frontend
+@app.route('/api/procedimentos', methods=['POST'])
+def add_procedimento():
+    data = request.get_json()
+    procedimento = data.get('procedimento')
+
+    if not procedimento:
+        return jsonify({'message': 'Procedimento é obrigatório!'}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('INSERT INTO procedimentos (procedimentos) VALUES (?)', (procedimento))
+    conn.commit()
+    conn.close()
+
+    return jsonify({'message': 'Procedimento adicionado com sucesso!'}), 201
+
+
 if __name__ == '__main__':
     app.run(debug=True)
