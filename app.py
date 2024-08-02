@@ -3,12 +3,13 @@ import sqlite3
 from flask_cors import CORS
 import jwt
 import datetime
+import re
 
 app = Flask(__name__)
 CORS(app)  # Para permitir requisições de diferentes domínios
 
 # Configuração do segredo para JWT
-SECRET_KEY = 'GZpRA5eac1&kjf%w09^tBPKE'
+app.config['SECRET_KEY'] = 'GZpRA5eac1&kjf%w09^tBPKE'
 
 # Função para conectar ao banco de dados SQLite
 def get_db_connection():
@@ -16,17 +17,36 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
+# Função para validar o formato do e-mail
+def is_valid_email(email):
+    email_regex = r'^\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
+    return re.match(email_regex, email)
+
 # Rota para registrar um novo usuário
 @app.route('/api/register', methods=['POST'])
 def register():
     new_user = request.get_json()
 
-    nome = new_user['nome']
-    email = new_user['email']
-    senha = new_user['senha']
+    nome = new_user.get('nome')
+    email = new_user.get('email')
+    senha = new_user.get('senha')
+
+    # Verifica se algum campo está vazio
+    if not nome or not email or not senha:
+        return jsonify({'message': 'Todos os campos são obrigatórios!'}), 400
 
     conn = get_db_connection()
     cursor = conn.cursor()
+
+    # Verifica se o e-mail já está registrado
+    cursor.execute('SELECT * FROM usuario WHERE email = ?', (email,))
+    existing_user = cursor.fetchone()
+
+    if existing_user:
+        conn.close()
+        return jsonify({'message': 'O e-mail já está registrado!'}), 400
+
+    # Se o e-mail não existe, insere o novo usuário
     cursor.execute(
         'INSERT INTO usuario (nome, email, senha) VALUES (?, ?, ?)',
         (nome, email, senha)
@@ -36,32 +56,30 @@ def register():
 
     return jsonify({'message': 'Usuário registrado com sucesso!'}), 201
 
+
 # Rota para login do usuário
 @app.route('/api/login', methods=['POST'])
 def login():
-    credentials = request.get_json()
+    auth = request.get_json()
+    email = auth.get('email')
+    senha = auth.get('senha')
 
-    email = credentials['email']
-    senha = credentials['senha']
+    if not email or not senha:
+        return jsonify({'message': 'Email e senha são obrigatórios!'}), 400
 
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute(
-        'SELECT * FROM usuario WHERE email = ? AND senha = ?',
-        (email, senha)
-    )
+    cursor.execute('SELECT * FROM usuario WHERE email = ? AND senha = ?', (email, senha))
     user = cursor.fetchone()
     conn.close()
 
     if user:
-        # Gerar token JWT
         token = jwt.encode({
-            'id': user['id'],
-            'nome': user['nome'],
+            'user_id': user['id'],
             'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1)
-        }, SECRET_KEY, algorithm='HS256')
+        }, app.config['SECRET_KEY'], algorithm='HS256')
 
-        return jsonify({'message': 'Login bem-sucedido!', 'token': token}), 200
+        return jsonify({'token': token}), 200
     else:
         return jsonify({'message': 'Credenciais inválidas!'}), 401
 
