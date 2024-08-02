@@ -92,7 +92,7 @@ def protected():
         return jsonify({'message': 'Token é necessário!'}), 403
 
     try:
-        decoded_token = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+        decoded_token = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
         return jsonify({'message': 'Token válido!', 'data': decoded_token}), 200
     except jwt.ExpiredSignatureError:
         return jsonify({'message': 'Token expirado!'}), 401
