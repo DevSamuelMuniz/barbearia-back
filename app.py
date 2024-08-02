@@ -6,7 +6,7 @@ import datetime
 import re
 
 app = Flask(__name__)
-CORS(app)  # Para permitir requisições de diferentes domínios
+CORS(app, resources={r"/api/*": {"origins": "*"}}) # Para permitir requisições de diferentes domínios
 
 # Configuração do segredo para JWT
 app.config['SECRET_KEY'] = 'GZpRA5eac1&kjf%w09^tBPKE'
@@ -112,8 +112,9 @@ def add_procedimento():
 
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('INSERT INTO procedimentos (procedimentos) VALUES (?)', (procedimento))
+    cursor.execute('INSERT INTO procedimentos (procedimentos) VALUES (?)', (procedimento,))
     conn.commit()
+    cursor.close()
     conn.close()
 
     return jsonify({'message': 'Procedimento adicionado com sucesso!'}), 201
