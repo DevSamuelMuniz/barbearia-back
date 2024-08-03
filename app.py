@@ -120,5 +120,34 @@ def add_procedimento():
     return jsonify({'message': 'Procedimento adicionado com sucesso!'}), 201
 
 
+
+#agendamento
+@app.route('/api/agendamento', methods=['POST'])
+def add_agendamento():
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'Dados de entrada inválidos'}), 400
+
+        nomeCliente = data.get('nomeCliente')
+        nomeBarbeiro = data.get('nomeBarbeiro')
+        horarioMarcado = data.get('horarioMarcado')
+
+        if not nomeCliente or not nomeBarbeiro or not horarioMarcado:
+            return jsonify({'error': 'Todos os campos são obrigatórios'}), 400
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('INSERT INTO agendamento (nomeCliente, nomeBarbeiro, horarioMarcado) VALUES (?, ?, ?)',
+                       (nomeCliente, nomeBarbeiro, horarioMarcado))
+        conn.commit()
+        conn.close()
+
+        return jsonify({'message': 'Agendamento criado com sucesso'}), 201
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 if __name__ == '__main__':
     app.run(debug=True)
