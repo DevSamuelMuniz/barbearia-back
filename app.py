@@ -149,5 +149,23 @@ def add_agendamento():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/agendamentos', methods=['GET'])
+def get_agendamentos():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT id, nomeCliente, nomeBarbeiro, horarioMarcado FROM agendamento ORDER BY horarioMarcado ASC')
+    agendamentos = cursor.fetchall()
+    conn.commit()
+    conn.close()
+
+    agendamentos_list = [
+        {"id": row["id"], "nomeCliente": row["nomeCliente"], "nomeBarbeiro": row["nomeBarbeiro"], "horarioMarcado": row["horarioMarcado"]}
+        for row in agendamentos
+    ]
+
+    return jsonify(agendamentos_list)
+
+
+
 if __name__ == '__main__':
     app.run(debug=True)
