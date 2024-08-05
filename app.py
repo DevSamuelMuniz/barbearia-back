@@ -120,6 +120,16 @@ def add_procedimento():
     return jsonify({'message': 'Procedimento adicionado com sucesso!'}), 201
 
 
+@app.route('api/procedimentos', methods=['GET'])
+def get_procedimentos():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM procedimentos')
+    procedimentos = cursor.fetchall()
+    conn.cursor
+    
+    procedimentos_list = [{'id': row['id'], 'procedimento': row['procedimentos']} for row in procedimentos]
+    return jsonify(procedimentos_list), 200
 
 #agendamento
 @app.route('/api/agendamento', methods=['POST'])
@@ -198,8 +208,6 @@ def barbeiros():
         })
 
     return jsonify(barbeiros_list), 200
-
-
 
 
 
