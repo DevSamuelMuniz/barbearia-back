@@ -25,7 +25,7 @@ conn.commit()
 
 # procedimentos
 cursor.execute('''CREATE TABLE IF NOT EXISTS procedimentos
-             (id INTEGER PRIMARY KEY, procedimentos VARCHAR(100))
+             (id INTEGER PRIMARY KEY, procedimento VARCHAR(100), valor VARCHAR(10))
                ''')
 conn.commit()
 

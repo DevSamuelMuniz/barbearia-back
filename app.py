@@ -106,13 +106,14 @@ def protected():
 def add_procedimento():
     data = request.get_json()
     procedimento = data.get('procedimento')
+    valor = data.get('valor')
 
     if not procedimento:
         return jsonify({'message': 'Procedimento é obrigatório!'}), 400
 
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('INSERT INTO procedimentos (procedimentos) VALUES (?)', (procedimento,))
+    cursor.execute('INSERT INTO procedimentos (procedimento, valor) VALUES (?,?)', (procedimento, valor,))
     conn.commit()
     cursor.close()
     conn.close()
@@ -120,16 +121,25 @@ def add_procedimento():
     return jsonify({'message': 'Procedimento adicionado com sucesso!'}), 201
 
 
-@app.route('api/procedimentos', methods=['GET'])
+@app.route('/api/procedimentos-get', methods=['GET'])
 def get_procedimentos():
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('SELECT * FROM procedimentos')
+    cursor.execute('SELECT id, procedimento, valor FROM procedimentos')  # Ajuste o nome da coluna para corresponder ao seu banco de dados
     procedimentos = cursor.fetchall()
-    conn.cursor
+    conn.close()
     
-    procedimentos_list = [{'id': row['id'], 'procedimento': row['procedimentos']} for row in procedimentos]
+    procedimentos_list = []
+    for procedimento in procedimentos:
+        procedimentos_list.append(
+            {
+                'id': procedimento['id'], 
+                'procedimento': procedimento['procedimento'],
+                'valor': procedimento['valor']
+            }
+        )
     return jsonify(procedimentos_list), 200
+
 
 #agendamento
 @app.route('/api/agendamento', methods=['POST'])
