@@ -165,6 +165,44 @@ def get_agendamentos():
 
     return jsonify(agendamentos_list)
 
+@app.route('/api/addBarbeiro', methods=['POST'])
+def add_barbeiro():
+    data = request.get_json()
+
+    nomeBarbeiro = data.get('nomeBarbeiro')
+    cpf = data.get('cpf')
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('INSERT INTO barbeiro (nomeBarbeiro, cpf) VALUES (?, ?)',
+                   (nomeBarbeiro, cpf))
+    conn.commit()
+    conn.close()
+
+    return jsonify({"message": "Barbeiro adicionado com sucesso!"}), 201
+
+@app.route('/api/barbeiros', methods=['GET'])
+def barbeiros():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT id, nomeBarbeiro FROM barbeiro')
+    
+    barbeiros = cursor.fetchall()
+    conn.close()
+    
+    barbeiros_list = []
+    for barbeiro in barbeiros:
+        barbeiros_list.append({
+            'id': barbeiro['id'],
+            'nomeBarbeiro': barbeiro['nomeBarbeiro']
+        })
+
+    return jsonify(barbeiros_list), 200
+
+
+
+
+
 
 
 if __name__ == '__main__':
