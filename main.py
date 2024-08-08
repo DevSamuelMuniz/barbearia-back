@@ -29,6 +29,17 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS procedimentos
                ''')
 conn.commit()
 
+# atendimento
+cursor.execute('''CREATE TABLE IF NOT EXISTS atendimento
+               (id INTEGER PRIMARY KEY, 
+               nomeCliente VARCHAR(100),
+               nomeBarbeiro VARCHAR(100),
+               horarioMarcado DATETIME,
+               procedimentos TEXT,
+               valorTotal DECIMAL(10, 2))
+              ''')
+conn.commit()
+
 rows = cursor.fetchall()
 
 for row in rows:

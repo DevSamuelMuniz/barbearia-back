@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request
 import sqlite3
 from flask_cors import CORS
 import jwt
+import json
 import datetime
 import re
 
@@ -139,6 +140,31 @@ def get_procedimentos():
             }
         )
     return jsonify(procedimentos_list), 200
+
+# configuração para armazenar os dados do modal
+@app.route('/api/store-procedimentos', methods=['POST'])
+def store_procedimentos():
+    data = request.get_json()
+    
+    nomeCliente = data.get('nomeCliente')
+    nomeBarbeiro = data.get('nomeBarbeiro')
+    horarioMarcado = data.get('horarioMarcado')
+    procedimentos_selecionados = data.get('procedimentos')
+    valor_total = data.get('total')
+
+    procedimentos_json = json.dumps(procedimentos_selecionados)
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT INTO atendimento (nomeCliente, nomeBarbeiro, horarioMarcado, procedimentos, valorTotal)
+        VALUES (?, ?, ?, ?, ?)
+    ''', (nomeCliente, nomeBarbeiro, horarioMarcado, procedimentos_json, valor_total))
+    
+    conn.commit()
+    conn.close()
+
+    return jsonify({"message": "Atendimento armazenado com sucesso!"}), 201
 
 
 #agendamento
