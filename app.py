@@ -167,6 +167,29 @@ def store_procedimentos():
     return jsonify({"message": "Atendimento armazenado com sucesso!"}), 201
 
 
+#Financeiro
+@app.route('/api/financeiros', methods=['GET'])
+def get_financeiro():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT id, nomeCliente, nomeBarbeiro, horarioMarcado, valorTotal FROM atendimento')
+    financeiros = cursor.fetchall()
+    conn.close()
+
+    financeiro_list = []
+    for financeiro in financeiros:
+        financeiro_list.append(
+            {
+                'id': financeiro['id'],
+                'nomeCliente': financeiro['nomeCliente'],
+                'nomeBarbeiro': financeiro['nomeBarbeiro'],
+                'horarioMarcado': financeiro['horarioMarcado'],
+                'valorTotal': financeiro['valorTotal']
+            }
+        )
+    return jsonify(financeiro_list), 200    
+
+
 #agendamento
 @app.route('/api/agendamento', methods=['POST'])
 def add_agendamento():
