@@ -5,6 +5,8 @@ import jwt
 import json
 import datetime
 import re
+from datetime import datetime
+
 
 app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "*"}}) # Para permitir requisições de diferentes domínios
@@ -179,8 +181,6 @@ def delete_agendamento(agendamento_id):
     return jsonify({"message": "Agendamento excluído com sucesso!"}), 200
 
 
-
-
 #Financeiro
 @app.route('/api/financeiros', methods=['GET'])
 def get_financeiro():
@@ -192,19 +192,28 @@ def get_financeiro():
 
     financeiro_list = []
     for financeiro in financeiros:
+        try:
+            # Tenta converter o horário para o formato desejado
+            horario_formatado = datetime.strptime(financeiro['horarioMarcado'], '%Y-%m-%dT%H:%M:%S').strftime('%d/%m/%Y %H:%M')
+        except ValueError:
+            # Se já estiver no formato correto, mantém como está
+            horario_formatado = financeiro['horarioMarcado']
+        
         financeiro_list.append(
             {
                 'id': financeiro['id'],
                 'nomeCliente': financeiro['nomeCliente'],
                 'nomeBarbeiro': financeiro['nomeBarbeiro'],
-                'horarioMarcado': financeiro['horarioMarcado'],
+                'horarioMarcado': horario_formatado,
                 'valorTotal': financeiro['valorTotal']
             }
         )
-    return jsonify(financeiro_list), 200    
+    return jsonify(financeiro_list), 200
 
 
-#agendamento
+
+from datetime import datetime
+
 @app.route('/api/agendamento', methods=['POST'])
 def add_agendamento():
     try:
@@ -215,9 +224,12 @@ def add_agendamento():
         nomeCliente = data.get('nomeCliente')
         nomeBarbeiro = data.get('nomeBarbeiro')
         horarioMarcado = data.get('horarioMarcado')
-
+        
         if not nomeCliente or not nomeBarbeiro or not horarioMarcado:
             return jsonify({'error': 'Todos os campos são obrigatórios'}), 400
+
+        # Converter o horário marcado para o formato DD/MM/YYYY HH:MM
+        horarioMarcado = datetime.strptime(horarioMarcado, '%Y-%m-%dT%H:%M').strftime('%d/%m/%Y %H:%M')
 
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -230,6 +242,7 @@ def add_agendamento():
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
 
 
 @app.route('/api/agendamentos', methods=['GET'])
