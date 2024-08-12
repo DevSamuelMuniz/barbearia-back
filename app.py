@@ -167,6 +167,20 @@ def store_procedimentos():
     return jsonify({"message": "Atendimento armazenado com sucesso!"}), 201
 
 
+#Configuração para excluir os dados ao finalizar o modal
+@app.route('/api/delete-agendamento/<int:agendamento_id>', methods=['DELETE'])
+def delete_agendamento(agendamento_id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM agendamento WHERE id = ?', (agendamento_id,))
+    conn.commit()
+    conn.close()
+
+    return jsonify({"message": "Agendamento excluído com sucesso!"}), 200
+
+
+
+
 #Financeiro
 @app.route('/api/financeiros', methods=['GET'])
 def get_financeiro():
