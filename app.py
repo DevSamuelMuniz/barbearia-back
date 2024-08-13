@@ -5,8 +5,7 @@ import jwt
 import json
 import datetime
 import re
-from datetime import datetime
-
+from datetime import datetime, timedelta, timezone
 
 app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "*"}}) # Para permitir requisições de diferentes domínios
@@ -79,12 +78,14 @@ def login():
     if user:
         token = jwt.encode({
             'user_id': user['id'],
-            'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1)
+            'exp': datetime.now(timezone.utc) + timedelta(hours=1)
+
         }, app.config['SECRET_KEY'], algorithm='HS256')
 
         return jsonify({'token': token}), 200
     else:
         return jsonify({'message': 'Credenciais inválidas!'}), 401
+
 
 # Rota para verificar o token (opcional)
 @app.route('/api/protected', methods=['GET'])
