@@ -299,6 +299,34 @@ def barbeiros():
 
 
 
+#retono dos filtros
+@app.route('/api/get-date-financeiro', methods=['GET'])
+def filtro_data_financeiro():
+    date = request.args.get('date')
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Ajuste a consulta conforme necessário
+    cursor.execute('SELECT * FROM atendimento WHERE horarioMarcado LIKE ?', (f'{date}%',))
+    rows = cursor.fetchall()
+    conn.close()
+    
+    data = [dict(row) for row in rows]
+    return jsonify(data)
+
+
+@app.route('/api/get-date-agendamento', methods=['GET'])
+def filtro_data_agendamento():
+    date = request.args.get('date')
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Ajuste a consulta conforme necessário
+    cursor.execute('SELECT * FROM agendamento WHERE horarioMarcado LIKE ?', (f'{date}%',))
+    rows = cursor.fetchall()
+    conn.close()
+    
+    data = [dict(row) for row in rows]
+    return jsonify(data)
+
 
 if __name__ == '__main__':
     app.run(debug=True)
