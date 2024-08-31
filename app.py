@@ -175,7 +175,13 @@ def store_procedimentos():
 def delete_agendamento(agendamento_id):
     conn = get_db_connection()
     cursor = conn.cursor()
+    
+    # Excluir da tabela 'agendamento'
     cursor.execute('DELETE FROM agendamento WHERE id = ?', (agendamento_id,))
+    
+    # Excluir da tabela 'agendamentos'
+    cursor.execute('DELETE FROM agendamentos WHERE id = ?', (agendamento_id,))
+    
     conn.commit()
     conn.close()
 
@@ -250,17 +256,32 @@ def add_agendamento():
 def get_agendamentos():
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('SELECT id, nomeCliente, nomeBarbeiro, horarioMarcado FROM agendamento ORDER BY horarioMarcado ASC')
+
+    # Consulta para unir dados das tabelas 'agendamento' e 'agendamentos'
+    query = '''
+        SELECT id, nomeCliente, nomeBarbeiro, horarioMarcado
+        FROM agendamento
+        UNION
+        SELECT a.id, a.nome_cliente AS nomeCliente, a.nome_barbeiro AS nomeBarbeiro, h.horario AS horarioMarcado
+        FROM agendamentos a
+        JOIN horarios_disponiveis h ON a.horario_id = h.id
+        ORDER BY horarioMarcado ASC
+    '''
+
+    cursor.execute(query)
     agendamentos = cursor.fetchall()
     conn.commit()
     conn.close()
 
+    # Converter os resultados para um formato de lista de dicionários
     agendamentos_list = [
-        {"id": row["id"], "nomeCliente": row["nomeCliente"], "nomeBarbeiro": row["nomeBarbeiro"], "horarioMarcado": row["horarioMarcado"]}
+        {"id": row[0], "nomeCliente": row[1], "nomeBarbeiro": row[2], "horarioMarcado": row[3]}
         for row in agendamentos
     ]
 
     return jsonify(agendamentos_list)
+
+
 
 @app.route('/api/addBarbeiro', methods=['POST'])
 def add_barbeiro():
@@ -326,6 +347,105 @@ def filtro_data_agendamento():
     
     data = [dict(row) for row in rows]
     return jsonify(data)
+
+#horarios barbeiro
+
+@app.route('/api/horarios-disponiveis', methods=['POST'])
+def add_horarios_disponiveis():
+    data = request.get_json()
+    nomeBarbeiro = data.get('nomeBarbeiro')
+    horariosDisponiveis = data.get('horariosDisponiveis')
+
+    if not nomeBarbeiro or not horariosDisponiveis:
+        return jsonify({'error': 'Nome do barbeiro e horários são obrigatórios'}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    for horario in horariosDisponiveis:
+        cursor.execute('''
+            INSERT INTO horarios_disponiveis (nomeBarbeiro, horario, disponivel) 
+            VALUES (?, ?, ?)
+        ''', (nomeBarbeiro, horario, True))  # Definindo 'disponivel' como True por padrão
+
+    conn.commit()
+    conn.close()
+
+    return jsonify({'message': 'Horários disponíveis adicionados com sucesso'}), 201
+
+@app.route('/api/horarios-disponiveis', methods=['GET'])
+def get_horarios_disponiveis():
+    nomeBarbeiro = request.args.get('nomeBarbeiro')
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT id, horario, disponivel FROM horarios_disponiveis WHERE nomeBarbeiro = ?', (nomeBarbeiro,))
+    horarios = cursor.fetchall()
+    conn.close()
+    horarios_list = [{'id': row[0], 'horario': row[1], 'disponivel': row[2]} for row in horarios]
+    return jsonify(horarios_list), 200
+
+@app.route('/api/horarios-disponiveis/<int:horario_id>', methods=['PUT'])
+def update_horario_disponivel(horario_id):
+    data = request.get_json()
+    disponivel = data.get('disponivel')
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('UPDATE horarios_disponiveis SET disponivel = ? WHERE id = ?',
+                   (disponivel, horario_id))
+    conn.commit()
+    conn.close()
+
+    return jsonify({'message': 'Horário atualizado com sucesso'}), 200
+
+@app.route('/api/barbeiros', methods=['GET'])
+def get_barbeiros():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT id, nomeBarbeiro FROM barbeiros')
+    barbeiros = cursor.fetchall()
+    conn.close()
+    barbeiros_list = [{'id': row[0], 'nomeBarbeiro': row[1]} for row in barbeiros]
+    return jsonify(barbeiros_list), 200
+
+#cliente mandando dados para o banco
+@app.route('/api/agendar', methods=['POST'])
+def agendar():
+    data = request.get_json()
+    horario_id = data.get('horarioId')
+    nome_cliente = data.get('nomeCliente')
+    whatsapp = data.get('whatsapp')
+    nome_barbeiro = data.get('nomeBarbeiro')  # Adicionando nome_barbeiro
+
+    if not horario_id or not nome_cliente or not whatsapp or not nome_barbeiro:
+        return jsonify({'error': 'Horário, nome do cliente, WhatsApp e nome do barbeiro são obrigatórios'}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Verificar se o horário está disponível
+    cursor.execute('SELECT disponivel FROM horarios_disponiveis WHERE id = ?', (horario_id,))
+    horario = cursor.fetchone()
+
+    if not horario:
+        return jsonify({'error': 'Horário não encontrado'}), 404
+
+    if not horario[0]:  # Verifique a coluna de disponibilidade
+        return jsonify({'error': 'Horário não disponível'}), 400
+
+    # Atualizar o horário para não disponível
+    cursor.execute('UPDATE horarios_disponiveis SET disponivel = ? WHERE id = ?', (False, horario_id))
+
+    # Adicionar o agendamento
+    cursor.execute('INSERT INTO agendamentos (nome_cliente, nome_barbeiro, whatsapp, horario_id) VALUES (?, ?, ?, ?)',
+                   (nome_cliente, nome_barbeiro, whatsapp, horario_id))
+
+    conn.commit()
+    conn.close()
+
+    return jsonify({'message': 'Agendamento realizado com sucesso'}), 201
+
+
 
 
 if __name__ == '__main__':

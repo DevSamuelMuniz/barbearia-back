@@ -40,6 +40,30 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS atendimento
               ''')
 conn.commit()
 
+# horários disponiveis pelo barbeiro
+cursor.execute('''
+        CREATE TABLE IF NOT EXISTS horarios_disponiveis (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nomeBarbeiro TEXT NOT NULL,
+            horario TEXT NOT NULL,
+            disponivel BOOLEAN NOT NULL
+        )
+    ''')
+    
+conn.commit()
+
+# dados cliente direto sem login
+cursor.execute('''
+    CREATE TABLE IF NOT EXISTS agendamentos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nome_cliente TEXT NOT NULL,
+        nome_barbeiro TEXT NOT NULL,
+        whatsapp TEXT NOT NULL,
+        horario_id INTEGER NOT NULL,
+        FOREIGN KEY (horario_id) REFERENCES horarios_disponiveis(id)
+    )
+''')
+
 rows = cursor.fetchall()
 
 for row in rows:
